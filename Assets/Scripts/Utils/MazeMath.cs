@@ -4,18 +4,18 @@ public class MazeMath
 {
     private static Random random = new Random();
 
-    public static int getRandom(int min, int max)
+    public static int GetRandom(int min, int max)
     {
         return random.Next(min, max);
     }
 
-    public static float getRandom()
+    public static float GetRandom()
     {
         return (float)random.NextDouble();
     }
 
-    public static void setSeed(int seed)
+    public static void SetSeed(int _seed)
     {
-        random = new System.Random(seed);
+        random = new Random(_seed);
     }
 }

@@ -1,5 +1,6 @@
 using DG.Tweening;
 using Sirenix.OdinInspector;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using TMPro;
@@ -14,10 +15,14 @@ public class UIManager : MonoBehaviour
     [SerializeField][DisableInPlayMode] private GameObject mainMenuPanel;
     [SerializeField][DisableInPlayMode] private GameObject gamePanel;
 
+    [SerializeField][DisableInPlayMode] private Image fadeImage;
+
     [SerializeField][DisableInPlayMode] private Image logo;
     [SerializeField][DisableInPlayMode] private Transform inGameLogoAnchor;
     private RectTransform logoRectTransform;
     private Vector2 scaledLogoRectTransform;
+
+    [SerializeField][DisableInPlayMode] private AudioSource difficultyTogglesAudioSource;
 
     [SerializeField][DisableInPlayMode] private Transform difficultyTogglesContainer;
     [SerializeField][DisableInPlayMode] private Transform difficultyTogglesContainerHiddenAnchor;
@@ -26,6 +31,11 @@ public class UIManager : MonoBehaviour
     [SerializeField][DisableInPlayMode] private Toggle hardToggle;
     [SerializeField][DisableInPlayMode] private Toggle impossibleToggle;
 
+    [SerializeField][DisableInPlayMode] private Transform vottingTimeContainer;
+    [SerializeField][DisableInPlayMode] private Transform vottingTimeContainerHiddenAnchor;
+    [SerializeField][DisableInPlayMode] private Slider vottingTimeSlider;
+    [SerializeField][DisableInPlayMode] private TextMeshProUGUI votingTimeText;
+
     [SerializeField][DisableInPlayMode] private TMP_InputField twitchChannelInputField;
     [SerializeField][DisableInPlayMode] private Button connectButton;
     [SerializeField][DisableInPlayMode] private Image twitchLogo;
@@ -33,6 +43,7 @@ public class UIManager : MonoBehaviour
     [SerializeField][DisableInPlayMode] private List<Image> connectingDots;
 
     [SerializeField][DisableInPlayMode] private Image timebar;
+    [SerializeField][DisableInPlayMode] private Transform currentMovesTextContainer;
     [SerializeField][DisableInPlayMode] private TextMeshProUGUI currentMovesText;
 
     [SerializeField][DisableInPlayMode] private Transform compass;
@@ -66,12 +77,16 @@ public class UIManager : MonoBehaviour
     private Vector2 defaultCompassRawImageSizeDelta;
 
     private Vector2 defaultDifficultyTogglesContainer;
+    private Vector2 defaultVottingTimeSliderContainer;
 
     private float currentCompassImageRotationSpeed;
 
     private bool rotateCompassImage;
 
     private Direction currentDirection;
+
+    private const float FADE_DELAY = 1;
+    private const float FADE_TIME = 1;
 
     private const float INITIALIZATITON_DELAY = 1;
     private const float HIDE_NO_VOTES_PANEL_DELAY = 2;
@@ -86,7 +101,12 @@ public class UIManager : MonoBehaviour
     private const float COMPASS_IMAGE_ROTATION_SPEED = 3600;
     private const float COMPASS_DELAY = 0.5f;
 
-    private const float TOOLTIP_TEXT_ANIMATION_TIME = 30;
+    private const float TOOLTIP_TEXT_ANIMATION_TIME = 20;
+
+    private const float CHATTER_NAME_OFFSET = 50;
+
+    private const string TIMEOUT_CHATTERS_TOOLTIP = "TIMEOUT_CHATTERS_TOOLTIP";
+    private const string TIMEOUT_CHATTERS_MESSAGE = "Jugadores vetados: ";
 
     private void Awake()
     {
@@ -101,8 +121,12 @@ public class UIManager : MonoBehaviour
 
         logoRectTransform = logo.GetComponent<RectTransform>();
         scaledLogoRectTransform = logoRectTransform.sizeDelta / 2;
+
         defaultDifficultyTogglesContainer = difficultyTogglesContainer.localPosition;
+        defaultVottingTimeSliderContainer = vottingTimeContainer.localPosition;
+
         difficultyTogglesContainer.localPosition = new Vector2(difficultyTogglesContainerHiddenAnchor.localPosition.x, difficultyTogglesContainer.localPosition.y);
+        vottingTimeContainer.localPosition = new Vector2(vottingTimeContainerHiddenAnchor.localPosition.x, vottingTimeContainer.localPosition.y);
     }
 
     private void Start()
@@ -116,30 +140,30 @@ public class UIManager : MonoBehaviour
         twitchChannelInputField.transform.localScale = new Vector2(0, 1);
         connectButton.transform.localScale = new Vector2(0, 1);
 
-        StartCoroutine(Initialize());
-
-        tooltipText.text = tooltips[Random.Range(0, tooltips.Count)];
-
-        tooltipText.transform.DOLocalMoveX(-1920, TOOLTIP_TEXT_ANIMATION_TIME).SetLoops(-1, LoopType.Restart).SetEase(Ease.Linear).OnStepComplete(() =>
+        FadeIn(() =>
         {
-            tooltipText.text = tooltips[Random.Range(0, tooltips.Count)];
+            StartCoroutine(Initialize());
         });
+
+        StartCoroutine(InitializeTooltip());
 
         switch (GameManager.Instance.GetDifficulty())
         {
             case Difficulty.Easy:
-                easyToggle.isOn = true;
+                easyToggle.SetIsOnWithoutNotify(true);
                 break;
             case Difficulty.Normal:
-                normalToggle.isOn = true;
+                normalToggle.SetIsOnWithoutNotify(true);
                 break;
             case Difficulty.Hard:
-                hardToggle.isOn = true;
+                hardToggle.SetIsOnWithoutNotify(true);
                 break;
             case Difficulty.Impossible:
-                impossibleToggle.isOn = true;
+                impossibleToggle.SetIsOnWithoutNotify(true);
                 break;
         }
+
+        vottingTimeSlider.value = GameManager.Instance.GetVotingTime();
     }
 
     private void Update()
@@ -199,12 +223,71 @@ public class UIManager : MonoBehaviour
             connectButton.transform.DOScaleX(1, 0.5f);
 
             ShowDifficultyTogglesContainer();
+            ShowVotingTimeSliderContainer();
         });
     }
 
     public void Initialize(string _twitchChannel)
     {
         twitchChannelInputField.text = _twitchChannel;
+    }
+
+    private IEnumerator InitializeTooltip()
+    {
+        Vector2 initialPosition;
+        Vector2 targetPosition;
+
+        tooltipText.text = tooltips[UnityEngine.Random.Range(0, tooltips.Count)];
+        if (tooltipText.text == TIMEOUT_CHATTERS_TOOLTIP)
+        {
+            CheckTimeoutChattersTooltip();
+        }
+
+        LayoutRebuilder.ForceRebuildLayoutImmediate(tooltipText.GetComponent<RectTransform>() as RectTransform);
+        yield return new WaitForSeconds(1);
+
+        initialPosition = new Vector2(960 + tooltipText.GetComponent<RectTransform>().sizeDelta.x / 2, tooltipText.transform.localPosition.y);
+        targetPosition = new Vector2(-960 - tooltipText.GetComponent<RectTransform>().sizeDelta.x / 2, tooltipText.transform.localPosition.y);
+
+        tooltipText.transform.localPosition = initialPosition;
+
+        tooltipText.transform.DOLocalMoveX(targetPosition.x, TOOLTIP_TEXT_ANIMATION_TIME).SetEase(Ease.Linear).OnComplete(() =>
+        {
+            StartCoroutine(InitializeTooltip());
+        });
+    }
+
+    private void CheckTimeoutChattersTooltip()
+    {
+        if (GameManager.Instance.GetTimeoutChatters().Count == 0)
+        {
+            do
+            {
+                tooltipText.text = tooltips[UnityEngine.Random.Range(0, tooltips.Count)];
+            }
+            while (tooltipText.text == TIMEOUT_CHATTERS_TOOLTIP);
+        }
+        else
+        {
+            string tooltip = TIMEOUT_CHATTERS_MESSAGE;
+            int index = 0;
+
+            foreach (TimeoutChatter timeoutChatter in GameManager.Instance.GetTimeoutChatters())
+            {
+                if (index == GameManager.Instance.GetTimeoutChatters().Count - 1)
+                {
+                    tooltip += string.Format("{0} [{1}]", timeoutChatter.chatterName, timeoutChatter.timeoutTurns);
+                }
+                else
+                {
+                    tooltip += string.Format("{0} [{1}], ", timeoutChatter.chatterName, timeoutChatter.timeoutTurns);
+                }
+
+                index++;
+            }
+
+            tooltipText.text = tooltip;
+        }
     }
 
     public void UpdateTimebar(float _value)
@@ -241,9 +324,10 @@ public class UIManager : MonoBehaviour
                 break;
         }
 
-        chatterName.transform.DOMoveX(compassRawImage.transform.position.x, CHATTER_NAME_TEXT_ANIMATION_TIME).OnComplete(() =>
+        Vector2 randomOffset = new Vector2(UnityEngine.Random.Range(-CHATTER_NAME_OFFSET, CHATTER_NAME_OFFSET), UnityEngine.Random.Range(-CHATTER_NAME_OFFSET, CHATTER_NAME_OFFSET));
+        chatterName.transform.DOMove(new Vector2(compassRawImage.transform.position.x + randomOffset.x, chatterName.transform.position.y + randomOffset.y), CHATTER_NAME_TEXT_ANIMATION_TIME).OnComplete(() =>
         {
-            chatterName.transform.DOMoveY(compassRawImage.transform.position.y, CHATTER_NAME_TEXT_ANIMATION_TIME);
+            chatterName.transform.DOMoveY(compassRawImage.transform.position.y + randomOffset.y, CHATTER_NAME_TEXT_ANIMATION_TIME);
             chatterName.transform.DOScale(0, CHATTER_NAME_TEXT_ANIMATION_TIME).OnComplete(() =>
             {
                 Destroy(chatterName.gameObject);
@@ -341,6 +425,8 @@ public class UIManager : MonoBehaviour
         compassRawImage.transform.DOLocalMove(defaultCompassRawImagePosition, COMPASS_ANIMATION_TIME);
         compassRawImage.GetComponent<RectTransform>().DOSizeDelta(defaultCompassRawImageSizeDelta, COMPASS_ANIMATION_TIME).OnComplete(() =>
         {
+            ShowCurrentMovesTextContainer();
+
             GameManager.Instance.OnCompassAnimationCompleted();
         });
     }
@@ -376,6 +462,7 @@ public class UIManager : MonoBehaviour
         });
 
         HideDifficultyTogglesContainer();
+        HideVotingTimeSliderContainer();
     }
 
     private IEnumerator StartConnectingDotsCoroutine()
@@ -468,6 +555,8 @@ public class UIManager : MonoBehaviour
         if (_value)
         {
             GameManager.Instance.SetDifficulty(Difficulty.Easy);
+
+            difficultyTogglesAudioSource.Play();
         }
     }
 
@@ -476,6 +565,8 @@ public class UIManager : MonoBehaviour
         if (_value)
         {
             GameManager.Instance.SetDifficulty(Difficulty.Normal);
+
+            difficultyTogglesAudioSource.Play();
         }
     }
 
@@ -484,6 +575,8 @@ public class UIManager : MonoBehaviour
         if (_value)
         {
             GameManager.Instance.SetDifficulty(Difficulty.Hard);
+
+            difficultyTogglesAudioSource.Play();
         }
     }
 
@@ -492,6 +585,8 @@ public class UIManager : MonoBehaviour
         if (_value)
         {
             GameManager.Instance.SetDifficulty(Difficulty.Impossible);
+
+            difficultyTogglesAudioSource.Play();
         }
     }
 
@@ -506,6 +601,75 @@ public class UIManager : MonoBehaviour
         difficultyTogglesContainer.DOLocalMoveX(difficultyTogglesContainerHiddenAnchor.localPosition.x, ANIMATION_TIME).SetRelative(true).OnComplete(() =>
         {
             difficultyTogglesContainer.gameObject.SetActive(false);
+        });
+    }
+
+    public void ShowVotingTimeSliderContainer()
+    {
+        vottingTimeContainer.gameObject.SetActive(true);
+        vottingTimeContainer.DOLocalMoveX(defaultVottingTimeSliderContainer.x, ANIMATION_TIME);
+    }
+
+    public void HideVotingTimeSliderContainer()
+    {
+        vottingTimeContainer.DOLocalMoveX(vottingTimeContainerHiddenAnchor.localPosition.x, ANIMATION_TIME).SetRelative(true).OnComplete(() =>
+        {
+            vottingTimeContainer.gameObject.SetActive(false);
+        });
+    }
+
+    public void HandleVotingTimeSlider(float _value)
+    {
+        GameManager.Instance.SetVotingTime(_value);
+        votingTimeText.text = _value.ToString();
+    }
+
+    public void HandleQuitButton()
+    {
+        FadeOut(() =>
+        {
+            GameManager.Instance.Quit();
+        });
+    }
+
+    public void FadeIn(Action _action = null)
+    {
+        fadeImage.color = Color.black;
+
+        fadeImage.gameObject.SetActive(true);
+        fadeImage.DOFade(0, FADE_TIME).SetDelay(FADE_DELAY).OnComplete(() =>
+        {
+            if (_action != null)
+            {
+                _action.Invoke();
+            }
+        });
+    }
+
+    public void FadeOut(Action _action = null)
+    {
+        fadeImage.DOFade(1, FADE_TIME).OnComplete(() =>
+        {
+            if (_action != null)
+            {
+                fadeImage.gameObject.SetActive(true);
+                _action.Invoke();
+            }
+        });
+    }
+
+    private void ShowCurrentMovesTextContainer()
+    {
+        currentMovesTextContainer.gameObject.SetActive(true);
+
+        currentMovesTextContainer.DOScale(1, ANIMATION_TIME);
+    }
+
+    public void HideCurrentMovesTextContainer()
+    {
+        currentMovesTextContainer.DOScale(0, ANIMATION_TIME).OnComplete(() =>
+        {
+            currentMovesTextContainer.gameObject.SetActive(false);
         });
     }
 }

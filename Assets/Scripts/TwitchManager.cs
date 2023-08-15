@@ -61,9 +61,9 @@ public class TwitchManager : MonoBehaviour
         GameManager.Instance.OnConnected();
     }
 
-    private void OnMessageReceived(Chatter _chatter)
+    public void OnMessageReceived(Chatter _chatter)
     {
-        if (_chatter.IsCommand() && !GameManager.Instance.ChatterAlreadyVoted(_chatter.tags.displayName) && GameManager.Instance.GetState() == GameManager.GameState.Voting)
+        if (_chatter.IsCommand() && !GameManager.Instance.ChatterAlreadyVoted(_chatter.tags.displayName) && !GameManager.Instance.IsTimeoutChatter(_chatter.tags.displayName) && GameManager.Instance.GetState() == GameManager.GameState.Voting)
         {
             GameManager.Direction direction = GameManager.Direction.None;
             string pattern = @"!(north|south|east|west) ([2-5])";
@@ -118,9 +118,9 @@ public class TwitchManager : MonoBehaviour
 
             if (validCommand)
             {
-                GameManager.Instance.VoteStep(steps);
+                GameManager.Instance.VoteStep(direction, steps);
 
-                if (Player.Instance.HasWallInDirection(direction))
+                if (Player.Instance.HasWallInDirection(direction, steps))
                 {
                     GameManager.Instance.TimeoutChatter(_chatter.tags.displayName);
                 }
@@ -128,5 +128,10 @@ public class TwitchManager : MonoBehaviour
                 UIManager.Instance.OnChatterVoted(direction, _chatter.tags.displayName, _chatter.GetNameColor());
             }
         }
+    }
+
+    public string GetChannel()
+    {
+        return twitchChannel;
     }
 }

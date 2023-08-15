@@ -4,6 +4,7 @@ using static GameManager;
 using Sirenix.OdinInspector;
 using System;
 using System.Collections.Generic;
+using TwitchChat;
 
 public class Player : MonoBehaviour
 {
@@ -74,30 +75,6 @@ public class Player : MonoBehaviour
             Move(Direction.West);
         }
 
-        if (GameManager.Instance.GetState() == GameState.Voting)
-        {
-            if (Input.GetKeyDown(KeyCode.N))
-            {
-                GameManager.Instance.IncreaseNorthVotes();
-                UIManager.Instance.OnChatterVoted(Direction.North, TESTING_CHATTER, Color.white);
-            }
-            else if (Input.GetKeyDown(KeyCode.S))
-            {
-                GameManager.Instance.IncreaseSouthVotes();
-                UIManager.Instance.OnChatterVoted(Direction.South, TESTING_CHATTER, Color.white);
-            }
-            else if (Input.GetKeyDown(KeyCode.E))
-            {
-                GameManager.Instance.IncreaseEastVotes();
-                UIManager.Instance.OnChatterVoted(Direction.East, TESTING_CHATTER, Color.white);
-            }
-            else if (Input.GetKeyDown(KeyCode.W))
-            {
-                GameManager.Instance.IncreaseWestVotes();
-                UIManager.Instance.OnChatterVoted(Direction.West, TESTING_CHATTER, Color.white);
-            }
-        }
-
         if (goalHandler != null && Vector3.SqrMagnitude(goalPosition - transform.position) < 0.5f)
         {
             goalHandler();
@@ -145,6 +122,13 @@ public class Player : MonoBehaviour
                         _action.Invoke();
                     }
                 });
+            }
+            else
+            {
+                if (_action != null)
+                {
+                    _action.Invoke();
+                }
             }
         });
     }

@@ -14,7 +14,7 @@ PlayerSettings:
   accelerometerFrequency: 60
   companyName: MekArts Games
   productName: Mazerica
-  defaultCursor: {fileID: 0}
+  defaultCursor: {fileID: 2800000, guid: f201626f5bd044642a3f54f077da8b19, type: 3}
   cursorHotspot: {x: 0, y: 0}
   m_SplashScreenBackgroundColor: {r: 0, g: 0, b: 0, a: 1}
   m_ShowUnitySplashScreen: 1

@@ -276,7 +276,7 @@ namespace qtools.qmaze
         {
             if (useSeed)
             {
-                MazeMath.setSeed(seed);
+                MazeMath.SetSeed(seed);
             }
 
             IEnumerator generationEnumerator = Generate(false);
@@ -334,13 +334,13 @@ namespace qtools.qmaze
             }
             startFinishLeft += finishPositionList.Count;
 
-            MazeVector2Int startGenerationPoint = new MazeVector2Int(MazeMath.getRandom(0, mazeWidth), MazeMath.getRandom(0, mazeHeight));
+            MazeVector2Int startGenerationPoint = new MazeVector2Int(MazeMath.GetRandom(0, mazeWidth), MazeMath.GetRandom(0, mazeHeight));
             while (ListUtilities.Has(startPositionList, startGenerationPoint) ||
                    ListUtilities.Has(finishPositionList, startGenerationPoint) ||
                    ListUtilities.Has(obstaclePositionList, startGenerationPoint))
             {
-                startGenerationPoint.x = MazeMath.getRandom(0, mazeWidth);
-                startGenerationPoint.y = MazeMath.getRandom(0, mazeHeight);
+                startGenerationPoint.x = MazeMath.GetRandom(0, mazeWidth);
+                startGenerationPoint.y = MazeMath.GetRandom(0, mazeHeight);
             }
 
             path = new List<MazeVector2Int>();
@@ -539,7 +539,7 @@ namespace qtools.qmaze
         {
             MazePiece targetPiece = piecePack.GetPiece(pieceData.type);
 
-            GameObject prefab = targetPiece.geometryList[MazeMath.getRandom(0, targetPiece.geometryList.Count)];
+            GameObject prefab = targetPiece.geometryList[MazeMath.GetRandom(0, targetPiece.geometryList.Count)];
             GameObject go;
 #if UNITY_EDITOR
             if (Application.isPlaying)
@@ -575,11 +575,11 @@ namespace qtools.qmaze
         {
             for (int i = 0; i < randomCount; i++)
             {
-                MazeVector2IntDir newPoint = new MazeVector2IntDir(MazeMath.getRandom(0, mazeWidth), MazeMath.getRandom(0, mazeHeight), MazeOutputDirection.NotSpecified);
+                MazeVector2IntDir newPoint = new MazeVector2IntDir(MazeMath.GetRandom(0, mazeWidth), MazeMath.GetRandom(0, mazeHeight), MazeOutputDirection.NotSpecified);
                 while (!PointInMaze(newPoint) || ListUtilities.Has(startPositionList, newPoint) || ListUtilities.Has(finishPositionList, newPoint) || ListUtilities.Has(exitPositionList, newPoint))
                 {
-                    newPoint.x = MazeMath.getRandom(0, mazeWidth);
-                    newPoint.y = MazeMath.getRandom(0, mazeHeight);
+                    newPoint.x = MazeMath.GetRandom(0, mazeWidth);
+                    newPoint.y = MazeMath.GetRandom(0, mazeHeight);
                 }
                 pointList.Add(newPoint);
             }
@@ -717,7 +717,7 @@ namespace qtools.qmaze
 
         private int checkUnder(MazeVector2Int currentPosition, MazeVector2Int newPosition, List<MazeOutput> newPositionOutputs, MazeOutputDirection dir)
         {
-            if (MazeMath.getRandom() < piecePack.GetPiece(MazePieceType.Intersection).frequency &&
+            if (MazeMath.GetRandom() < piecePack.GetPiece(MazePieceType.Intersection).frequency &&
                 newPositionOutputs != null &&
                 newPositionOutputs.Count == 1 &&
                 newPositionOutputs[0].outputDirList.Count == 2 &&
@@ -757,7 +757,7 @@ namespace qtools.qmaze
 
         private int checkCrossing(MazeVector2Int currentPosition, MazeVector2Int newPosition, List<MazeOutput> newPositionOutputs, MazeOutputDirection dir)
         {
-            if (MazeMath.getRandom() < piecePack.GetPiece(MazePieceType.Crossing).frequency &&
+            if (MazeMath.GetRandom() < piecePack.GetPiece(MazePieceType.Crossing).frequency &&
                 newPositionOutputs != null &&
                 newPositionOutputs.Count == 1 &&
                 newPositionOutputs[0].outputDirList.Count == 2 &&
@@ -793,7 +793,7 @@ namespace qtools.qmaze
 
         private int checkTripple(MazeVector2Int currentPosition, MazeVector2Int newPosition, List<MazeOutput> newPositionOutputs, MazeOutputDirection dir)
         {
-            if (MazeMath.getRandom() < piecePack.GetPiece(MazePieceType.Triple).frequency &&
+            if (MazeMath.GetRandom() < piecePack.GetPiece(MazePieceType.Triple).frequency &&
                 newPositionOutputs.Count == 1 &&
                 newPositionOutputs[0].outputDirList.Count == 2 &&
                 newPositionOutputs[0].outputDirList.Contains(dir) &&
@@ -811,7 +811,7 @@ namespace qtools.qmaze
 
         private int checkDoubleCorner(MazeVector2Int currentPosition, MazeVector2Int newPosition, List<MazeOutput> newPositionOutputs, MazeOutputDirection dir)
         {
-            if (MazeMath.getRandom() < piecePack.GetPiece(MazePieceType.DoubleCorner).frequency &&
+            if (MazeMath.GetRandom() < piecePack.GetPiece(MazePieceType.DoubleCorner).frequency &&
                 newPositionOutputs.Count == 1 &&
                 newPositionOutputs[0].outputDirList.Count == 2 &&
                 newPositionOutputs[0].outputDirList.Contains(dir) &&
@@ -872,7 +872,7 @@ namespace qtools.qmaze
 
         private int checkDeadlockCorner(MazeVector2Int currentPosition, MazeVector2Int newPosition, List<MazeOutput> newPositionOutputs, MazeOutputDirection dir)
         {
-            if (MazeMath.getRandom() < piecePack.GetPiece(MazePieceType.DeadlockCorner).frequency &&
+            if (MazeMath.GetRandom() < piecePack.GetPiece(MazePieceType.DeadlockCorner).frequency &&
                 newPositionOutputs != null &&
                 newPositionOutputs.Count == 1 &&
                 newPositionOutputs[0].outputDirList.Count == 1 &&
@@ -892,7 +892,7 @@ namespace qtools.qmaze
 
         private int checkDeadlockLine(MazeVector2Int currentPosition, MazeVector2Int newPosition, List<MazeOutput> newPositionOutputs, MazeOutputDirection dir)
         {
-            if (MazeMath.getRandom() < piecePack.GetPiece(MazePieceType.DeadlockLine).frequency &&
+            if (MazeMath.GetRandom() < piecePack.GetPiece(MazePieceType.DeadlockLine).frequency &&
                 newPositionOutputs != null &&
                 newPositionOutputs.Count == 1 &&
                 newPositionOutputs[0].outputDirList.Count == 1 &&
@@ -912,7 +912,7 @@ namespace qtools.qmaze
 
         private int checkDeadlockTriple(MazeVector2Int currentPosition, MazeVector2Int newPosition, List<MazeOutput> newPositionOutputs, MazeOutputDirection dir)
         {
-            if (MazeMath.getRandom() < piecePack.GetPiece(MazePieceType.DeadlockTriple).frequency &&
+            if (MazeMath.GetRandom() < piecePack.GetPiece(MazePieceType.DeadlockTriple).frequency &&
                 newPositionOutputs != null &&
                 newPositionOutputs.Count == 2 &&
                 newPositionOutputs[0].outputDirList.Count == 1 &&
@@ -934,7 +934,7 @@ namespace qtools.qmaze
 
         private int checkDeadlockCrossing(MazeVector2Int currentPosition, MazeVector2Int newPosition, List<MazeOutput> newPositionOutputs, MazeOutputDirection dir)
         {
-            if (MazeMath.getRandom() < piecePack.GetPiece(MazePieceType.DeadlockCrossing).frequency &&
+            if (MazeMath.GetRandom() < piecePack.GetPiece(MazePieceType.DeadlockCrossing).frequency &&
                 newPositionOutputs != null &&
                 newPositionOutputs.Count == 3 &&
                 newPositionOutputs[0].outputDirList.Count == 1 &&
@@ -958,7 +958,7 @@ namespace qtools.qmaze
 
         private int checkTripleDeadlock(MazeVector2Int currentPosition, MazeVector2Int newPosition, List<MazeOutput> newPositionOutputs, MazeOutputDirection dir)
         {
-            if (MazeMath.getRandom() < piecePack.GetPiece(MazePieceType.TripleDeadlock).frequency &&
+            if (MazeMath.GetRandom() < piecePack.GetPiece(MazePieceType.TripleDeadlock).frequency &&
                 newPositionOutputs != null &&
                 newPositionOutputs.Count == 1 &&
                 newPositionOutputs[0].outputDirList.Count == 3 &&
@@ -978,7 +978,7 @@ namespace qtools.qmaze
 
         private int checkLineDeadlock(MazeVector2Int currentPosition, MazeVector2Int newPosition, List<MazeOutput> newPositionOutputs, MazeOutputDirection dir)
         {
-            if (MazeMath.getRandom() < piecePack.GetPiece(MazePieceType.LineDeadlock).frequency &&
+            if (MazeMath.GetRandom() < piecePack.GetPiece(MazePieceType.LineDeadlock).frequency &&
                 newPositionOutputs != null &&
                 newPositionOutputs.Count == 1 &&
                 newPositionOutputs[0].outputDirList.Count == 2 &&
@@ -999,7 +999,7 @@ namespace qtools.qmaze
 
         private int checkLineDeadlockLine(MazeVector2Int currentPosition, MazeVector2Int newPosition, List<MazeOutput> newPositionOutputs, MazeOutputDirection dir)
         {
-            if (MazeMath.getRandom() < piecePack.GetPiece(MazePieceType.LineDeadlockLine).frequency &&
+            if (MazeMath.GetRandom() < piecePack.GetPiece(MazePieceType.LineDeadlockLine).frequency &&
                 newPositionOutputs != null &&
                 newPositionOutputs.Count == 2 &&
                 !newPositionOutputs[0].outputDirList.Contains(MazeOutput.opposite[dir]) &&
@@ -1021,7 +1021,7 @@ namespace qtools.qmaze
 
         private int checkCornerDeadlock1(MazeVector2Int currentPosition, MazeVector2Int newPosition, List<MazeOutput> newPositionOutputs, MazeOutputDirection dir)
         {
-            if (MazeMath.getRandom() < piecePack.GetPiece(MazePieceType.CornerDeadlockLeft).frequency &&
+            if (MazeMath.GetRandom() < piecePack.GetPiece(MazePieceType.CornerDeadlockLeft).frequency &&
                 newPositionOutputs != null &&
                 newPositionOutputs.Count == 1 &&
                 newPositionOutputs[0].outputDirList.Count == 2 &&
@@ -1042,7 +1042,7 @@ namespace qtools.qmaze
 
         private int checkCornerDeadlock2(MazeVector2Int currentPosition, MazeVector2Int newPosition, List<MazeOutput> newPositionOutputs, MazeOutputDirection dir)
         {
-            if (MazeMath.getRandom() < piecePack.GetPiece(MazePieceType.CornerDeadlockRight).frequency &&
+            if (MazeMath.GetRandom() < piecePack.GetPiece(MazePieceType.CornerDeadlockRight).frequency &&
                 newPositionOutputs.Count == 1 &&
                 newPositionOutputs[0].outputDirList.Count == 2 &&
                 newPositionOutputs[0].outputDirList.Contains(dir) &&
@@ -1062,7 +1062,7 @@ namespace qtools.qmaze
 
         private int checkCornerDeadlockCorner(MazeVector2Int currentPosition, MazeVector2Int newPosition, List<MazeOutput> newPositionOutputs, MazeOutputDirection dir)
         {
-            if (MazeMath.getRandom() < piecePack.GetPiece(MazePieceType.CornerDeadlockCorner).frequency &&
+            if (MazeMath.GetRandom() < piecePack.GetPiece(MazePieceType.CornerDeadlockCorner).frequency &&
                 newPositionOutputs.Count == 2 &&
                 !newPositionOutputs[0].outputDirList.Contains(MazeOutput.opposite[dir]) &&
                 !newPositionOutputs[1].outputDirList.Contains(MazeOutput.opposite[dir]) &&
@@ -1084,7 +1084,7 @@ namespace qtools.qmaze
         private int checkNone(MazeVector2Int currentPosition, MazeVector2Int newPosition, List<MazeOutput> newPositionOutputs, MazeOutputDirection dir)
         {
             if (startFinishLeft == 0 &&
-                MazeMath.getRandom() < piecePack.GetPiece(MazePieceType.None).frequency &&
+                MazeMath.GetRandom() < piecePack.GetPiece(MazePieceType.None).frequency &&
                 newPositionOutputs.Count == 1 &&
                 newPositionOutputs[0].outputDirList.Count == 1 &&
                 newPositionOutputs[0].outputDirList.Contains(MazeOutput.opposite[dir]))

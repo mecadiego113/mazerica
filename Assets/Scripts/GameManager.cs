@@ -5,6 +5,9 @@ using qtools.qmaze;
 using Sirenix.OdinInspector;
 using DG.Tweening;
 using System;
+using TwitchChat;
+using Unity.Mathematics;
+using UnityEngine.UIElements;
 
 public class GameManager : MonoBehaviour
 {
@@ -33,8 +36,8 @@ public class GameManager : MonoBehaviour
     private MazeEngine prevMazeEngine;
     private MazeEngine nextMazeEngine;
 
-    private QRectInt prevRect;
-    private QRectInt nextRect;
+    private RectInt prevRect;
+    private RectInt nextRect;
 
     private int currentLevel;
 
@@ -45,11 +48,15 @@ public class GameManager : MonoBehaviour
     [SerializeField][ReadOnly] private GameState state = GameState.Undefined;
     [SerializeField][ReadOnly] private Difficulty difficulty;
 
-    [SerializeField][Range(5, 30)] private int votingTime;
+    [SerializeField][ReadOnly] private float votingTime = 10;
 
     [SerializeField][ReadOnly] private List<string> currentVotedChatters = new List<string>();
     [SerializeField][ReadOnly] private List<TimeoutChatter> timeoutChatters = new List<TimeoutChatter>();
-    [SerializeField][ReadOnly] private List<int> currentVotedSteps = new List<int>();
+
+    [SerializeField][ReadOnly] private List<int> currentVotedNorthSteps = new List<int>();
+    [SerializeField][ReadOnly] private List<int> currentVotedSouthSteps = new List<int>();
+    [SerializeField][ReadOnly] private List<int> currentVotedEastSteps = new List<int>();
+    [SerializeField][ReadOnly] private List<int> currentVotedWestSteps = new List<int>();
 
     [SerializeField][ReadOnly] private int currentNorthVotes;
     [SerializeField][ReadOnly] private int currentSouthVotes;
@@ -65,6 +72,9 @@ public class GameManager : MonoBehaviour
     [SerializeField][DisableInPlayMode] private Transform goal;
     [SerializeField][DisableInPlayMode] private Light goalLight;
 
+    [SerializeField][DisableInPlayMode] private List<string> testingNames;
+    [SerializeField][DisableInPlayMode] private List<string> remainingTestingNames;
+
     private Direction direction;
     private int steps;
     [SerializeField][ReadOnly] private bool goalReached;
@@ -78,22 +88,25 @@ public class GameManager : MonoBehaviour
     private const float ANIMATION_TIME = 1;
 
     private const string DIFFICULTY = "difficulty";
+    private const string VOTING_TIME = "votting_time";
 
     private const int EASY_CHILD_MAZE_SIZE = 2;
-    private const int NORMAL_CHILD_MAZE_SIZE = 4;
+    private const int NORMAL_CHILD_MAZE_SIZE = 3;
     private const int HARD_CHILD_MAZE_SIZE = 5;
     private const int IMPOSSIBLE_CHILD_MAZE_SIZE = 8;
 
     private const int EASY_MAZE_SIZE = 10;
     private const int NORMAL_MAZE_SIZE = 15;
     private const int HARD_MAZE_SIZE = 25;
-    private const int IMPOSSIBLE_MAZE_SIZE = 50;
+    private const int IMPOSSIBLE_MAZE_SIZE = 40;
 
     private const int DEMO_MAZE_SIZE = 25;
 
     private const int TIMEOUT_TURNS = 5;
 
     private const float MAZE_GENERATION_DELAY = 2;
+
+    private const int USER_ID_LENGHT = 10;
 
     private void Awake()
     {
@@ -107,6 +120,9 @@ public class GameManager : MonoBehaviour
         }
 
         Enum.TryParse(PlayerPrefs.GetString(DIFFICULTY, Difficulty.Normal.ToString()), out difficulty);
+        SetDifficulty(difficulty);
+
+        votingTime = PlayerPrefs.GetFloat(VOTING_TIME, 10);
     }
 
     private void Start()
@@ -120,6 +136,11 @@ public class GameManager : MonoBehaviour
     {
         if (state == GameState.Voting)
         {
+            if (remainingTestingNames.Count > 0)
+            {
+                VoteTesting();
+            }
+
             currentTime -= Time.deltaTime;
             UIManager.Instance.UpdateTimebar(currentTime / votingTime);
 
@@ -127,12 +148,6 @@ public class GameManager : MonoBehaviour
             {
                 OnTimeout();
             }
-        }
-
-        if (Input.GetKeyDown(KeyCode.T))
-        {
-            player.SetPosition(nextMazeEngine.transform.TransformPoint(nextMazeEngine.getFinishPositionList()[0].toVector3()));
-            StartCoroutine(FinishAnimation());
         }
     }
 
@@ -153,6 +168,56 @@ public class GameManager : MonoBehaviour
         baseMazeEngine.mazePieceGeneratedEvent.AddListener(OnMazePieceGenerated);
 
         baseMazeEngine.GenerateMaze();
+    }
+
+    private void VoteTesting()
+    {
+        if (Input.GetKeyDown(KeyCode.N))
+        {
+            string testingName = GetRandomTestingName();
+
+            IRCTags IRCTags = GetRandomIRCTags(testingName);
+
+            Chatter chatter = new Chatter(testingName, TwitchManager.Instance.GetChannel(), "!north", IRCTags);
+            TwitchManager.Instance.OnMessageReceived(chatter);
+        }
+        else if (Input.GetKeyDown(KeyCode.S))
+        {
+            string testingName = GetRandomTestingName();
+
+            IRCTags IRCTags = GetRandomIRCTags(testingName);
+
+            Chatter chatter = new Chatter(testingName, TwitchManager.Instance.GetChannel(), "!south", IRCTags);
+            TwitchManager.Instance.OnMessageReceived(chatter);
+        }
+        else if (Input.GetKeyDown(KeyCode.E))
+        {
+            string testingName = GetRandomTestingName();
+
+            IRCTags IRCTags = GetRandomIRCTags(testingName);
+
+            Chatter chatter = new Chatter(testingName, TwitchManager.Instance.GetChannel(), "!east", IRCTags);
+            TwitchManager.Instance.OnMessageReceived(chatter);
+        }
+        else if (Input.GetKeyDown(KeyCode.W))
+        {
+            string testingName = GetRandomTestingName();
+
+            IRCTags IRCTags = GetRandomIRCTags(testingName);
+
+            Chatter chatter = new Chatter(testingName, TwitchManager.Instance.GetChannel(), "!west", IRCTags);
+            TwitchManager.Instance.OnMessageReceived(chatter);
+        }
+    }
+
+    private IRCTags GetRandomIRCTags(string _displayName)
+    {
+        IRCTags IRCTags = new IRCTags();
+        IRCTags.userId = GetRandomUserId();
+        IRCTags.colorHex = GetRandomHexColor();
+        IRCTags.displayName = _displayName;
+
+        return IRCTags;
     }
 
     public void IncreaseNorthVotes()
@@ -179,9 +244,23 @@ public class GameManager : MonoBehaviour
         currentTotalVotes += 1;
     }
 
-    public void VoteStep(int _steps)
+    public void VoteStep(Direction _direction, int _steps)
     {
-        currentVotedSteps.Add(_steps);
+        switch (_direction)
+        {
+            case Direction.North:
+                currentVotedNorthSteps.Add(_steps);
+                break;
+            case Direction.South:
+                currentVotedSouthSteps.Add(_steps);
+                break;
+            case Direction.East:
+                currentVotedEastSteps.Add(_steps);
+                break;
+            case Direction.West:
+                currentVotedWestSteps.Add(_steps);
+                break;
+        }
     }
 
     private void ResetTime()
@@ -202,7 +281,10 @@ public class GameManager : MonoBehaviour
 
     private void ResetCurrentVotedSteps()
     {
-        currentVotedSteps.Clear();
+        currentVotedNorthSteps.Clear();
+        currentVotedSouthSteps.Clear();
+        currentVotedEastSteps.Clear();
+        currentVotedWestSteps.Clear();
     }
 
     public void AddChatter(string _chatter)
@@ -232,6 +314,8 @@ public class GameManager : MonoBehaviour
 
         player.HideSlots();
 
+        DecreaseTimeoutPlayers();
+
         if (currentTotalVotes == 0)
         {
             StartCoroutine(OnTimeoutNoVotesCoroutine());
@@ -242,26 +326,32 @@ public class GameManager : MonoBehaviour
 
             int max = FindMaxValue(numbers);
 
+            List<int> currentVotedSteps;
+
             if (max == currentNorthVotes)
             {
                 direction = Direction.North;
+                currentVotedSteps = currentVotedNorthSteps;
             }
             else if (max == currentSouthVotes)
             {
                 direction = Direction.South;
+                currentVotedSteps = currentVotedSouthSteps;
             }
             else if (max == currentEastVotes)
             {
                 direction = Direction.East;
+                currentVotedSteps = currentVotedEastSteps;
             }
             else
             {
                 direction = Direction.West;
+                currentVotedSteps = currentVotedWestSteps;
             }
 
             if (currentVotedSteps.Count > 0)
             {
-                steps = FindMostVotedStepConut();
+                steps = FindMostVotedStepConut(currentVotedSteps);
             }
             else
             {
@@ -269,6 +359,19 @@ public class GameManager : MonoBehaviour
             }
 
             StartCoroutine(OnTimeoutCoroutine());
+        }
+    }
+
+    private void DecreaseTimeoutPlayers()
+    {
+        for (int i = 0; i < timeoutChatters.Count; i++)
+        {
+            timeoutChatters[i].timeoutTurns -= 1;
+
+            if (timeoutChatters[i].timeoutTurns == 0)
+            {
+                timeoutChatters.Remove(timeoutChatters[i]);
+            }
         }
     }
 
@@ -285,6 +388,8 @@ public class GameManager : MonoBehaviour
         yield return new WaitForSeconds(0.5f);
 
         UIManager.Instance.CenterCompassRawImage(direction);
+        UIManager.Instance.HideCurrentMovesTextContainer();
+
         VolumeManager.Instance.FadeInDOF();
     }
 
@@ -308,6 +413,7 @@ public class GameManager : MonoBehaviour
     {
         ResetTime();
         ResetVotes();
+        ResetTestingNames();
 
         player.ShowSlots();
         SetState(GameState.Voting);
@@ -403,7 +509,7 @@ public class GameManager : MonoBehaviour
         List<MazeVector2Int> obstaclePositionList = new List<MazeVector2Int>();
         if (prevMazeEngine == null)
         {
-            prevRect = new QRectInt(MazeMath.getRandom(1, baseMazeEngine.getMazeWidth() - childMazeSize - 2), MazeMath.getRandom(1, baseMazeEngine.getMazeHeight() - childMazeSize - 2), childMazeSize, childMazeSize);
+            prevRect = new RectInt(MazeMath.GetRandom(1, baseMazeEngine.getMazeWidth() - childMazeSize - 2), MazeMath.GetRandom(1, baseMazeEngine.getMazeHeight() - childMazeSize - 2), childMazeSize, childMazeSize);
             obstaclePositionList.AddRange(rectToList(prevRect));
             prevMazeEngine = CreateChildMaze(prevRect, childMazeEngine_1);
             prevMazeEngine.GenerateMaze();
@@ -418,11 +524,11 @@ public class GameManager : MonoBehaviour
             obstaclePositionList.AddRange(rectToList(prevRect));
         }
 
-        nextRect = new QRectInt(MazeMath.getRandom(1, baseMazeEngine.getMazeWidth() - childMazeSize - 2), MazeMath.getRandom(1, baseMazeEngine.getMazeHeight() - childMazeSize - 2), childMazeSize, childMazeSize);
+        nextRect = new RectInt(MazeMath.GetRandom(1, baseMazeEngine.getMazeWidth() - childMazeSize - 2), MazeMath.GetRandom(1, baseMazeEngine.getMazeHeight() - childMazeSize - 2), childMazeSize, childMazeSize);
         while (IsRectNear(prevRect, nextRect))
         {
-            nextRect.x = MazeMath.getRandom(1, baseMazeEngine.getMazeWidth() - childMazeSize - 2);
-            nextRect.y = MazeMath.getRandom(1, baseMazeEngine.getMazeHeight() - childMazeSize - 2);
+            nextRect.x = MazeMath.GetRandom(1, baseMazeEngine.getMazeWidth() - childMazeSize - 2);
+            nextRect.y = MazeMath.GetRandom(1, baseMazeEngine.getMazeHeight() - childMazeSize - 2);
         }
 
         obstaclePositionList.AddRange(rectToList(nextRect));
@@ -469,7 +575,7 @@ public class GameManager : MonoBehaviour
         GenerateNextLevel();
     }
 
-    private bool IsRectNear(QRectInt first, QRectInt second, int offset = 1)
+    private bool IsRectNear(RectInt first, RectInt second, int offset = 1)
     {
         if (first.x < second.x + second.width + offset && first.x + first.width + offset > second.x &&
             first.y < second.y + second.height + offset && first.y + first.height + offset > second.y)
@@ -478,7 +584,7 @@ public class GameManager : MonoBehaviour
             return false;
     }
 
-    private MazeEngine CreateChildMaze(QRectInt rect, MazeEngine mazeEngine)
+    private MazeEngine CreateChildMaze(RectInt rect, MazeEngine mazeEngine)
     {
         mazeEngine.setMazeWidth(rect.width);
         mazeEngine.setMazeHeight(rect.height);
@@ -503,19 +609,19 @@ public class GameManager : MonoBehaviour
         return mazeEngine;
     }
 
-    private MazeVector2IntDir getExitForRect(QRectInt rect)
+    private MazeVector2IntDir getExitForRect(RectInt rect)
     {
         MazeOutputDirection dir;
-        int ix = MazeMath.getRandom(0, rect.width);
+        int ix = MazeMath.GetRandom(0, rect.width);
         int iy;
         if (ix == 0 || ix == rect.width - 1)
         {
-            iy = MazeMath.getRandom(0, rect.height);
+            iy = MazeMath.GetRandom(0, rect.height);
             dir = (ix == 0 ? MazeOutputDirection.W : MazeOutputDirection.E);
         }
         else
         {
-            if (MazeMath.getRandom() > 0.5)
+            if (MazeMath.GetRandom() > 0.5)
             {
                 iy = 0;
                 dir = MazeOutputDirection.N;
@@ -546,6 +652,8 @@ public class GameManager : MonoBehaviour
 
         UIManager.Instance.HideGeneratingMazePanel();
 
+        CameraController.Instance.OnMazeGenerated();
+
         goal.parent = null;
 
         baseMazeEngine.GetComponent<Maze>().Show(() =>
@@ -571,7 +679,7 @@ public class GameManager : MonoBehaviour
         ShowGoal();
     }
 
-    private List<MazeVector2Int> rectToList(QRectInt rect)
+    private List<MazeVector2Int> rectToList(RectInt rect)
     {
         List<MazeVector2Int> result = new List<MazeVector2Int>();
         for (int ix = rect.x; ix < rect.x + rect.width; ix++)
@@ -610,16 +718,6 @@ public class GameManager : MonoBehaviour
     {
         currentMoves += 1;
         UIManager.Instance.UpdateCurrentMovesText(currentMoves);
-
-        for (int i = 0; i < timeoutChatters.Count; i++)
-        {
-            timeoutChatters[i].timeoutTurns -= 1;
-
-            if (timeoutChatters[i].timeoutTurns == 0)
-            {
-                timeoutChatters.Remove(timeoutChatters[i]);
-            }
-        }
     }
 
     private void ResetMoves()
@@ -639,16 +737,42 @@ public class GameManager : MonoBehaviour
 
     public void TimeoutChatter(string _chatterName)
     {
+        foreach (TimeoutChatter _timeoutChatter in timeoutChatters)
+        {
+            if (_timeoutChatter.chatterName == _chatterName)
+            {
+                return;
+            }
+        }
+
         TimeoutChatter timeoutChatter = new TimeoutChatter(_chatterName, TIMEOUT_TURNS);
 
         timeoutChatters.Add(timeoutChatter);
     }
 
-    private int FindMostVotedStepConut()
+    public bool IsTimeoutChatter(string _chatterName)
+    {
+        foreach (TimeoutChatter _timeoutChatter in timeoutChatters)
+        {
+            if (_timeoutChatter.chatterName == _chatterName)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    public List<TimeoutChatter> GetTimeoutChatters()
+    {
+        return timeoutChatters;
+    }
+
+    private int FindMostVotedStepConut(List<int> _currentVotedSteps)
     {
         Dictionary<int, int> stepCounts = new Dictionary<int, int>();
 
-        foreach (int number in currentVotedSteps)
+        foreach (int number in _currentVotedSteps)
         {
             if (stepCounts.ContainsKey(number))
             {
@@ -725,16 +849,76 @@ public class GameManager : MonoBehaviour
                 break;
         }
     }
+
+    public void SetVotingTime(float _time)
+    {
+        votingTime = _time;
+        PlayerPrefs.SetFloat(VOTING_TIME, votingTime);
+    }
+
+    public float GetVotingTime()
+    {
+        return votingTime;
+    }
+
+    public void Quit()
+    {
+        Application.Quit();
+    }
+
+    private void ResetTestingNames()
+    {
+        remainingTestingNames = new List<string>();
+        remainingTestingNames.AddRange(testingNames);
+    }
+
+    private string GetRandomTestingName()
+    {
+        int i = UnityEngine.Random.Range(0, remainingTestingNames.Count);
+
+        string testingName = remainingTestingNames[i];
+        remainingTestingNames.RemoveAt(i);
+
+        return testingName;
+    }
+
+    private string GetRandomUserId()
+    {
+        string digits = "0123456789";
+        char[] randomChars = new char[USER_ID_LENGHT];
+
+        System.Random random = new System.Random();
+
+        for (int i = 0; i < USER_ID_LENGHT; i++)
+        {
+            randomChars[i] = digits[random.Next(digits.Length)];
+        }
+
+        return new string(randomChars);
+    }
+
+    public string GetRandomHexColor()
+    {
+        System.Random random = new System.Random();
+
+        int red = random.Next(256);
+        int green = random.Next(256);
+        int blue = random.Next(256);
+
+        string hexColor = $"#{red:X2}{green:X2}{blue:X2}";
+
+        return hexColor;
+    }
 }
 
-public class QRectInt
+public class RectInt
 {
     public int x;
     public int y;
     public int width;
     public int height;
 
-    public QRectInt(int x, int y, int width, int height)
+    public RectInt(int x, int y, int width, int height)
     {
         this.x = x;
         this.y = y;

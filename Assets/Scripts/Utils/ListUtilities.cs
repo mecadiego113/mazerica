@@ -9,7 +9,7 @@ public class ListUtilities
 
         for (int i = 0; i < halfCount; i++)
         {
-            int j = MazeMath.getRandom(i, count);
+            int j = MazeMath.GetRandom(i, count);
 
             T temp = list[i];
             list[i] = list[j];
