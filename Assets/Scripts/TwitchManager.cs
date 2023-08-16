@@ -10,10 +10,15 @@ public class TwitchManager : MonoBehaviour
 
     private string twitchChannel;
 
-    private const string NORTH_COMMAND = "!north";
-    private const string SOUTH_COMMAND = "!south";
-    private const string EAST_COMMAND = "!east";
-    private const string WEST_COMMAND = "!west";
+    public const string NORTH_COMMAND = "!north";
+    public const string SOUTH_COMMAND = "!south";
+    public const string EAST_COMMAND = "!east";
+    public const string WEST_COMMAND = "!west";
+
+    public const string NORTH_SHORT_COMMAND = "!n";
+    public const string SOUTH_SHORT_COMMAND = "!s";
+    public const string EAST_SHORT_COMMAND = "!e";
+    public const string WEST_SHORT_COMMAND = "!w";
 
     private const string TWITCH_CHANNEL = "twitch_channel";
 
@@ -91,24 +96,28 @@ public class TwitchManager : MonoBehaviour
             switch (command)
             {
                 case NORTH_COMMAND:
+                case NORTH_SHORT_COMMAND:
                     GameManager.Instance.AddChatter(_chatter.tags.displayName);
                     GameManager.Instance.IncreaseNorthVotes();
                     direction = GameManager.Direction.North;
                     validCommand = true;
                     break;
                 case SOUTH_COMMAND:
+                case SOUTH_SHORT_COMMAND:
                     GameManager.Instance.AddChatter(_chatter.tags.displayName);
                     GameManager.Instance.IncreaseSouthVotes();
                     direction = GameManager.Direction.South;
                     validCommand = true;
                     break;
                 case EAST_COMMAND:
+                case EAST_SHORT_COMMAND:
                     GameManager.Instance.AddChatter(_chatter.tags.displayName);
                     GameManager.Instance.IncreaseEastVotes();
                     direction = GameManager.Direction.East;
                     validCommand = true;
                     break;
                 case WEST_COMMAND:
+                case WEST_SHORT_COMMAND:
                     GameManager.Instance.AddChatter(_chatter.tags.displayName);
                     GameManager.Instance.IncreaseWestVotes();
                     direction = GameManager.Direction.West;

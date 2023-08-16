@@ -178,7 +178,7 @@ public class GameManager : MonoBehaviour
 
             IRCTags IRCTags = GetRandomIRCTags(testingName);
 
-            Chatter chatter = new Chatter(testingName, TwitchManager.Instance.GetChannel(), "!north", IRCTags);
+            Chatter chatter = new Chatter(testingName, TwitchManager.Instance.GetChannel(), TwitchManager.NORTH_COMMAND, IRCTags);
             TwitchManager.Instance.OnMessageReceived(chatter);
         }
         else if (Input.GetKeyDown(KeyCode.S))
@@ -187,7 +187,7 @@ public class GameManager : MonoBehaviour
 
             IRCTags IRCTags = GetRandomIRCTags(testingName);
 
-            Chatter chatter = new Chatter(testingName, TwitchManager.Instance.GetChannel(), "!south", IRCTags);
+            Chatter chatter = new Chatter(testingName, TwitchManager.Instance.GetChannel(), TwitchManager.SOUTH_COMMAND, IRCTags);
             TwitchManager.Instance.OnMessageReceived(chatter);
         }
         else if (Input.GetKeyDown(KeyCode.E))
@@ -196,7 +196,7 @@ public class GameManager : MonoBehaviour
 
             IRCTags IRCTags = GetRandomIRCTags(testingName);
 
-            Chatter chatter = new Chatter(testingName, TwitchManager.Instance.GetChannel(), "!east", IRCTags);
+            Chatter chatter = new Chatter(testingName, TwitchManager.Instance.GetChannel(), TwitchManager.EAST_COMMAND, IRCTags);
             TwitchManager.Instance.OnMessageReceived(chatter);
         }
         else if (Input.GetKeyDown(KeyCode.W))
@@ -205,7 +205,7 @@ public class GameManager : MonoBehaviour
 
             IRCTags IRCTags = GetRandomIRCTags(testingName);
 
-            Chatter chatter = new Chatter(testingName, TwitchManager.Instance.GetChannel(), "!west", IRCTags);
+            Chatter chatter = new Chatter(testingName, TwitchManager.Instance.GetChannel(), TwitchManager.WEST_COMMAND, IRCTags);
             TwitchManager.Instance.OnMessageReceived(chatter);
         }
     }
@@ -385,7 +385,7 @@ public class GameManager : MonoBehaviour
 
     private IEnumerator OnTimeoutCoroutine()
     {
-        yield return new WaitForSeconds(0.5f);
+        yield return new WaitForSeconds(1);
 
         UIManager.Instance.CenterCompassRawImage(direction);
         UIManager.Instance.HideCurrentMovesTextContainer();

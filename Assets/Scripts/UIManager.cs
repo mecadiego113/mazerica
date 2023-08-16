@@ -234,8 +234,12 @@ public class UIManager : MonoBehaviour
 
     private IEnumerator InitializeTooltip()
     {
+        tooltipText.GetComponent<RectTransform>().ForceUpdateRectTransforms();
+
         Vector2 initialPosition;
         Vector2 targetPosition;
+
+        tooltipText.color = Color.clear;
 
         tooltipText.text = tooltips[UnityEngine.Random.Range(0, tooltips.Count)];
         if (tooltipText.text == TIMEOUT_CHATTERS_TOOLTIP)
@@ -243,13 +247,16 @@ public class UIManager : MonoBehaviour
             CheckTimeoutChattersTooltip();
         }
 
-        LayoutRebuilder.ForceRebuildLayoutImmediate(tooltipText.GetComponent<RectTransform>() as RectTransform);
         yield return new WaitForSeconds(1);
+
+        tooltipText.GetComponent<RectTransform>().ForceUpdateRectTransforms();
 
         initialPosition = new Vector2(960 + tooltipText.GetComponent<RectTransform>().sizeDelta.x / 2, tooltipText.transform.localPosition.y);
         targetPosition = new Vector2(-960 - tooltipText.GetComponent<RectTransform>().sizeDelta.x / 2, tooltipText.transform.localPosition.y);
 
         tooltipText.transform.localPosition = initialPosition;
+
+        tooltipText.color = Color.white;
 
         tooltipText.transform.DOLocalMoveX(targetPosition.x, TOOLTIP_TEXT_ANIMATION_TIME).SetEase(Ease.Linear).OnComplete(() =>
         {
@@ -667,9 +674,21 @@ public class UIManager : MonoBehaviour
 
     public void HideCurrentMovesTextContainer()
     {
-        currentMovesTextContainer.DOScale(0, ANIMATION_TIME).OnComplete(() =>
+        currentMovesTextContainer.DOScale(0, ANIMATION_TIME / 2).OnComplete(() =>
         {
             currentMovesTextContainer.gameObject.SetActive(false);
         });
+    }
+
+    public void HandleMuteMusicToggle(bool _value)
+    {
+        if (_value)
+        {
+            AudioManager.Instance.MuteMusic();
+        }
+        else
+        {
+            AudioManager.Instance.UnmuteMusic();
+        }
     }
 }

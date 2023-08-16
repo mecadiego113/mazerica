@@ -35,7 +35,6 @@ public class Player : MonoBehaviour
     private const string JUMP = "Jump";
     private const string WALK = "Walk";
 
-    private const string TESTING_CHATTER = "TestingChatter";
     private Vector3 defaultSlotScale = new Vector3(0.05f, 1, 0.05f);
 
     private void Awake()
